@@ -164,6 +164,12 @@ func resourcePingdomCheck() *schema.Resource {
 				Optional: true,
 				ForceNew: false,
 			},
+
+			"alert_policy": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: false,
+			},
 		},
 	}
 }
@@ -192,6 +198,7 @@ type commonCheckParams struct {
 	ShouldNotContain         string
 	PostData                 string
 	RequestHeaders           map[string]string
+	AlertPolicy              int
 }
 
 func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
@@ -290,6 +297,10 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 		}
 	}
 
+	if v, ok := d.GetOk("alert_policy"); ok {
+		checkParams.AlertPolicy = v.(int)
+	}
+
 	checkType := d.Get("type")
 	switch checkType {
 	case "http":
@@ -317,6 +328,7 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 			ShouldNotContain:         checkParams.ShouldNotContain,
 			PostData:                 checkParams.PostData,
 			RequestHeaders:           checkParams.RequestHeaders,
+			AlertPolicy:              checkParams.AlertPolicy,
 		}, nil
 	case "ping":
 		return &pingdom.PingCheck{
@@ -398,6 +410,8 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("sendnotificationwhendown", ck.SendNotificationWhenDown)
 	d.Set("notifyagainevery", ck.NotifyAgainEvery)
 	d.Set("notifywhenbackup", ck.NotifyWhenBackup)
+	d.Set("alert_policy", ck.AlertPolicy)
+
 	cids := schema.NewSet(
 		func(contactId interface{}) int { return contactId.(int) },
 		[]interface{}{},
